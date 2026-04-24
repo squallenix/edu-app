@@ -8,8 +8,8 @@ const handler = NextAuth({
         CredentialsProvider({
         name: "Credentials",
         credentials: {
-            email:{},
-            password:{}
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" },
         },
         async authorize(credentials) {
             if (!credentials?.email || !credentials?.password) {

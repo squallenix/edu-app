@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client/extension";
+import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 
-const prisma = new PrismaClient();
 export async function POST(request: Request) {
     const { email, name, password, role } = await request.json();
     if (!email || !name || !password) {

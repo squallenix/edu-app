@@ -8,7 +8,6 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint"
-  
   },
   "dependencies": {
     "@prisma/client": "^7.8.0",

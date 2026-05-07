@@ -71,7 +71,11 @@ export default function SignupPage() {
         setMessage(data.error || "Signup failed");
       } else {
         setMessage("Account created successfully!");
-        router.push("/dashboard");
+        if(role === "teacher") {
+          router.push("/dashboard_teacher");
+        } else {
+          router.push("/dashboard_student");
+        }
       }
     } catch {
       setMessage("Something went wrong");

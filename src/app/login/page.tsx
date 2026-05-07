@@ -22,7 +22,11 @@ export default function LoginPage() {
       const data = await res.json();
       if (res.ok) {
         // Handle successful login (e.g., store token, redirect)
-        router.push("/dashboard");
+        if(role === "teacher") {
+          router.push("/dashboard_teacher");
+        } else {
+          router.push("/dashboard_student");
+        }
       } else {
         // Handle login error (e.g., show error message)
         console.error("Login failed:", data.error);

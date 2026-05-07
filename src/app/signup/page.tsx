@@ -1,9 +1,10 @@
 "use client";
-
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BookOpen, GraduationCap, UserCircle } from "lucide-react";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [role, setRole] = useState<"student" | "teacher">("student");
 
   const [formData, setFormData] = useState({
@@ -70,12 +71,7 @@ export default function SignupPage() {
         setMessage(data.error || "Signup failed");
       } else {
         setMessage("Account created successfully!");
-        setFormData({
-          fullName: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-        });
+        router.push("/dashboard");
       }
     } catch {
       setMessage("Something went wrong");

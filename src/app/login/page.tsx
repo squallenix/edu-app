@@ -10,13 +10,26 @@ export default function LoginPage() {
   const [role, setRole] = useState<"student" | "teacher">("student");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // later: auth logic
-    //router.push("/dashboard");
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, role }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Handle successful login (e.g., store token, redirect)
+        router.push("/dashboard");
+      } else {
+        // Handle login error (e.g., show error message)
+        console.error("Login failed:", data.error);
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
+    }
   };
 
   return (

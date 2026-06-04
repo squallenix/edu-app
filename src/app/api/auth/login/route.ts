@@ -2,24 +2,41 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 
+type Role = "student" | "teacher" | "admin";
+
 export async function POST(request: Request) {
   try {
     const { email, password, role } = await request.json();
 
-    // Validation
-    if (!email || !password) {
+    if (!email || !password || !role) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    let user = null;
 
-    // User not found
+    switch (role as Role) {
+      case "student":
+        user = await prisma.student.findUnique({
+          where: { email },
+        });
+        break;
+
+      case "teacher":
+        user = await prisma.teacher.findUnique({
+          where: { email },
+        });
+        break;
+
+      case "admin":
+        user = await prisma.admin.findUnique({
+          where: { email },
+        });
+        break;
+    }
+
     if (!user) {
       return NextResponse.json(
         { error: "User not found" },
@@ -27,15 +44,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Role check
-    if (user.role !== role) {
-      return NextResponse.json(
-        { error: "Incorrect role selected" },
-        { status: 401 }
-      );
-    }
-
-    // Compare password
     const isPasswordCorrect = await bcrypt.compare(
       password,
       user.password
@@ -48,7 +56,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Success
     return NextResponse.json(
       {
         message: "Login successful",
@@ -56,7 +63,7 @@ export async function POST(request: Request) {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role,
+          role,
         },
       },
       { status: 200 }
@@ -65,7 +72,9 @@ export async function POST(request: Request) {
     console.error("Login error:", error);
 
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      {
+        error: "Internal Server Error",
+      },
       { status: 500 }
     );
   }

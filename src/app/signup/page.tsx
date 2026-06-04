@@ -54,7 +54,7 @@ export default function SignupPage() {
     setMessage("");
 
     try {
-      const res = await fetch("/api/signup", {
+      const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -72,9 +72,9 @@ export default function SignupPage() {
       } else {
         setMessage("Account created successfully!");
         if(role === "teacher") {
-          router.push("/dashboard_teacher");
+          router.push("/teacher/dashboard");
         } else {
-          router.push("/dashboard_student");
+          router.push("/student/dashboard");
         }
       }
     } catch {

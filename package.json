@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "create-admin": "node scripts/create-admin.js",
     "build": "prisma generate && next build",
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
-    "@prisma/adapter-mariadb": "^7.8.0",
+    "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@tanstack/react-query": "^5.100.9",
     "bcrypt": "^6.0.0",
@@ -19,6 +20,7 @@
     "lucide-react": "^1.11.0",
     "next": "16.2.4",
     "next-auth": "^4.24.14",
+    "pg": "^8.21.0",
     "prisma": "^7.8.0",
     "radix-ui": "^1.4.3",
     "react": "19.2.4",

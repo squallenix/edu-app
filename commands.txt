@@ -1,0 +1,17 @@
+run server
+{
+    npm run dev
+    ctrl+c (close)
+    npm run build(build)
+}
+prisma
+{
+npm install prisma @prisma/client(install)
+npm install @prisma/adapter-pg pg
+npx prisma init(initial prisma)
+npx prisma db push(push schema to db)
+npx prisma migrate dev --name 'name'(Create migration)
+npx prisma migrate deploy(deply to vercel)
+npx prisma migrate reset(reset db)
+npx prisma generate(generate prisma client)
+}

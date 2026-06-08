@@ -2,6 +2,7 @@
 
 import useSWR from "swr";
 import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import {
   BookOpen,
   ClipboardList,
@@ -10,6 +11,7 @@ import {
   Clock,
   LogOut,
   Library,
+  Search,
 } from "lucide-react";
 
 const fetcher = async (url: string) => {
@@ -26,26 +28,23 @@ const fetcher = async (url: string) => {
 type Exam = {
   id: string;
   title: string;
-  date: string;
-  time?: string;
-  duration?: string;
+  dueDate: string;
+  time: string;
+  duration: number | null;
 };
 
 type Result = {
   id: string;
   title: string;
-  score: number;
-  date: string;
+  score: number | null;
+  completedAt: string | null;
 };
 
 export default function StudentDashboard() {
   const { data: session, status } = useSession();
+  const router = useRouter();
 
-  const {
-    data,
-    isLoading,
-    error,
-  } = useSWR(
+  const { data, isLoading, error } = useSWR(
     status === "authenticated"
       ? "/api/student/dashboard"
       : null,
@@ -92,13 +91,17 @@ export default function StudentDashboard() {
   const recentExams: Result[] =
     data?.recentResults ?? [];
 
+  const gradedExams = recentExams.filter(
+    (exam) => exam.score !== null
+  );
+
   const averageScore =
-    recentExams.length > 0
+    gradedExams.length > 0
       ? Math.round(
-          recentExams.reduce(
-            (sum, exam) => sum + exam.score,
+          gradedExams.reduce(
+            (sum, exam) => sum + (exam.score ?? 0),
             0
-          ) / recentExams.length
+          ) / gradedExams.length
         )
       : 0;
 
@@ -125,7 +128,22 @@ export default function StudentDashboard() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground transition-colors">
+              <button
+                onClick={() =>
+                  router.push("/student/exams")
+                }
+                className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Search className="w-4 h-4" />
+                <span>Browse Exams</span>
+              </button>
+
+              <button
+                onClick={() =>
+                  router.push("/student/materials")
+                }
+                className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <Library className="w-4 h-4" />
                 <span>Study Materials</span>
               </button>
@@ -150,7 +168,8 @@ export default function StudentDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-2">
-            Welcome back, Student!
+            Welcome back,{" "}
+            {session?.user?.name ?? "Student"}!
           </h2>
 
           <p className="text-muted-foreground">
@@ -193,7 +212,7 @@ export default function StudentDashboard() {
             </p>
 
             <p className="text-sm text-muted-foreground">
-              Recent exams
+              Graded exams
             </p>
           </div>
 
@@ -239,18 +258,27 @@ export default function StudentDashboard() {
                       </span>
                     </div>
 
-                    <div className="flex gap-4 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
                         {new Date(
-                          exam.date
+                          exam.dueDate
                         ).toLocaleDateString()}
                       </div>
 
-                      {exam.time && (
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {exam.time}
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {new Date(
+                          `1970-01-01T${exam.time}`
+                        ).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+
+                      {exam.duration !== null && (
+                        <div>
+                          Duration: {exam.duration} mins
                         </div>
                       )}
                     </div>
@@ -264,7 +292,7 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          {/* Results */}
+          {/* Recent Results */}
           <div className="bg-card rounded-xl p-6 shadow-sm border">
             <h3 className="mb-4 font-semibold">
               Recent Results
@@ -282,22 +310,24 @@ export default function StudentDashboard() {
 
                       <div
                         className={`text-2xl font-bold ${
-                          exam.score >= 90
+                          (exam.score ?? 0) >= 90
                             ? "text-green-600"
-                            : exam.score >= 75
+                            : (exam.score ?? 0) >= 75
                             ? "text-blue-600"
                             : "text-amber-600"
                         }`}
                       >
-                        {exam.score}%
+                        {exam.score ?? "-"}%
                       </div>
                     </div>
 
                     <p className="text-sm text-muted-foreground">
                       Completed on{" "}
-                      {new Date(
-                        exam.date
-                      ).toLocaleDateString()}
+                      {exam.completedAt
+                        ? new Date(
+                            exam.completedAt
+                          ).toLocaleDateString()
+                        : "Not completed"}
                     </p>
                   </div>
                 ))

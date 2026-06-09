@@ -31,6 +31,7 @@ type Exam = {
   dueDate: string;
   time: string;
   duration: number | null;
+  canTake: boolean;
 };
 
 type Result = {
@@ -130,7 +131,7 @@ export default function StudentDashboard() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() =>
-                  router.push("/student/exams")
+                  router.push("/student/exam")
                 }
                 className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -140,7 +141,7 @@ export default function StudentDashboard() {
 
               <button
                 onClick={() =>
-                  router.push("/student/materials")
+                  router.push("/student/studyMaterial")
                 }
                 className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -248,13 +249,20 @@ export default function StudentDashboard() {
                 upcomingExams.map((exam) => (
                   <div
                     key={exam.id}
+                    onClick={() =>
+                      router.push(
+                        `/student/exam/details/${exam.id}`
+                      )
+                    }
                     className="p-4 rounded-lg border hover:border-primary/50 transition-colors cursor-pointer"
                   >
                     <div className="flex items-start justify-between mb-2">
                       <h4>{exam.title}</h4>
 
                       <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                        Upcoming
+                        {exam.canTake
+                          ? "Available Now"
+                          : "Upcoming"}
                       </span>
                     </div>
 

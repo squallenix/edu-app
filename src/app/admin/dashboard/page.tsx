@@ -1,6 +1,6 @@
 "use client";
-
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   Shield,
@@ -11,11 +11,8 @@ import {
   Trash2,
   Plus,
 } from "lucide-react";
-
 type Tab = "users" | "exams" | "materials";
-
-type UserRole = "student" | "teacher" | "admin";
-
+type UserRole = "student" | "teacher";
 interface UserDto {
   id: string;
   name: string;
@@ -23,7 +20,6 @@ interface UserDto {
   role: UserRole;
   createdAt: string;
 }
-
 interface ExamDto {
   id: string;
   title: string;
@@ -33,7 +29,6 @@ interface ExamDto {
   questionCount: number;
   creatorName: string;
 }
-
 interface StudyMaterialDto {
   id: string;
   title: string;
@@ -42,28 +37,43 @@ interface StudyMaterialDto {
   fileUrl: string | null;
   createdAt: string;
 }
-
+interface AdminDashboardUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  joinDate?: string;
+  createdAt?: string;
+}
+interface AdminDashboardExam {
+  id: string;
+  title: string;
+  description: string | null;
+  dueDate: string;
+  createdAt: string;
+  questionCount: number;
+  creatorName: string;
+}
+interface AdminDashboardResponse {
+  users?: AdminDashboardUser[];
+  exams?: AdminDashboardExam[];
+}
 export default function AdminDashboardPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] =
     useState<Tab>("users");
-
   const [loading, setLoading] =
     useState(true);
-
   const [users, setUsers] = useState<
     UserDto[]
   >([]);
-
   const [exams, setExams] = useState<
     ExamDto[]
   >([]);
-
   const [materials, setMaterials] =
     useState<StudyMaterialDto[]>([]);
-
   const [showAddMaterial, setShowAddMaterial] =
     useState(false);
-
   const [newMaterial, setNewMaterial] =
     useState({
       title: "",
@@ -71,51 +81,44 @@ export default function AdminDashboardPage() {
       type: "PDF",
       fileUrl: "",
     });
-
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
   async function loadDashboard() {
     try {
       setLoading(true);
-
       // Use the consolidated dashboard endpoint for users + exams
       const [dashboardRes, materialsRes] = await Promise.all([
         fetch("/api/admin/dashboard"),
         fetch("/api/admin/materials"),
       ]);
-
       if (!dashboardRes.ok || !materialsRes.ok) {
         throw new Error("Failed to load dashboard data");
       }
-
-      const dashboardData = await dashboardRes.json();
+      const dashboardData =
+        (await dashboardRes.json()) as AdminDashboardResponse;
       const materialsData = await materialsRes.json();
-
       // Map API shapes to local DTOs
       setUsers(
-        (dashboardData.users || []).map((u: any) => ({
+        (dashboardData.users || []).map((u) => ({
           id: u.id,
           name: u.name,
           email: u.email,
           role: u.role,
-          createdAt: u.joinDate || u.createdAt,
+          createdAt:
+            u.joinDate ||
+            u.createdAt ||
+            new Date(0).toISOString(),
         }))
       );
-
       setExams(
-        (dashboardData.exams || []).map((e: any) => ({
+        (dashboardData.exams || []).map((e) => ({
           id: e.id,
           title: e.title,
-          description: e.description ?? null,
-          dueDate: e.date,
-          createdAt: e.createdAt ?? new Date().toISOString(),
-          questionCount: e.questions ?? e.questionCount ?? 0,
-          creatorName: e.creator ?? e.creatorName,
+          description: e.description,
+          dueDate: e.dueDate,
+          createdAt: e.createdAt,
+          questionCount: e.questionCount,
+          creatorName: e.creatorName,
         }))
       );
-
       setMaterials(materialsData || []);
     } catch (error) {
       console.error(error);
@@ -124,17 +127,13 @@ export default function AdminDashboardPage() {
       setLoading(false);
     }
   }
-
   async function deleteUser(
     id: string,
-    role: UserRole
   ) {
     const confirmed = confirm(
       "Delete this user?"
     );
-
     if (!confirmed) return;
-
     try {
       const response = await fetch(
         `/api/admin/users/${id}`,
@@ -142,24 +141,19 @@ export default function AdminDashboardPage() {
           method: "DELETE",
         }
       );
-
       if (!response.ok) {
         throw new Error();
       }
-
       setUsers((prev) => prev.filter((u) => u.id !== id));
     } catch {
       alert("Failed to delete user");
     }
   }
-
   async function deleteExam(id: string) {
     const confirmed = confirm(
       "Delete this exam?"
     );
-
     if (!confirmed) return;
-
     try {
       const response = await fetch(
         `/api/admin/exams/${id}`,
@@ -167,11 +161,9 @@ export default function AdminDashboardPage() {
           method: "DELETE",
         }
       );
-
       if (!response.ok) {
         throw new Error();
       }
-
       setExams((prev) =>
         prev.filter((e) => e.id !== id)
       );
@@ -179,16 +171,13 @@ export default function AdminDashboardPage() {
       alert("Failed to delete exam");
     }
   }
-
   async function deleteMaterial(
     id: string
   ) {
     const confirmed = confirm(
       "Delete this material?"
     );
-
     if (!confirmed) return;
-
     try {
       const response = await fetch(`/api/admin/materials/${id}`, {
         method: "DELETE",
@@ -197,13 +186,11 @@ export default function AdminDashboardPage() {
       if (!response.ok) {
         throw new Error();
       }
-
       setMaterials((prev) => prev.filter((m) => m.id !== id));
     } catch {
       alert("Failed to delete material");
     }
   }
-
   async function addMaterial() {
     if (
       !newMaterial.title ||
@@ -212,7 +199,6 @@ export default function AdminDashboardPage() {
       alert("Please fill all fields");
       return;
     }
-
     try {
       const response = await fetch(
         "/api/admin/materials",
@@ -227,40 +213,36 @@ export default function AdminDashboardPage() {
           ),
         }
       );
-
       if (!response.ok) {
         throw new Error();
       }
-
       const created =
         await response.json();
-
       setMaterials((prev) => [
         created,
         ...prev,
       ]);
-
       setNewMaterial({
         title: "",
         subject: "",
         type: "PDF",
         fileUrl: "",
       });
-
       setShowAddMaterial(false);
     } catch {
       alert("Failed to add material");
     }
   }
-
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadDashboard();
+  }, []);
   const studentCount = users.filter(
     (u) => u.role === "student"
   ).length;
-
   const teacherCount = users.filter(
     (u) => u.role === "teacher"
   ).length;
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -268,7 +250,6 @@ export default function AdminDashboardPage() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <header className="bg-white border-b shadow-sm">
@@ -278,7 +259,6 @@ export default function AdminDashboardPage() {
               <div className="bg-purple-600 text-white p-2 rounded-lg">
                 <Shield className="w-6 h-6" />
               </div>
-
               <div>
                 <h1 className="font-semibold text-xl">
                   Admin Dashboard
@@ -289,7 +269,6 @@ export default function AdminDashboardPage() {
                 </p>
               </div>
             </div>
-
             <button
               onClick={() =>
                 signOut({
@@ -304,7 +283,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </header>
-
       <main className="max-w-7xl mx-auto p-6">
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <StatCard
@@ -312,7 +290,6 @@ export default function AdminDashboardPage() {
             value={users.length}
             icon={<Users className="w-5 h-5" />}
           />
-
           <StatCard
             title="Students"
             value={studentCount}
@@ -320,13 +297,11 @@ export default function AdminDashboardPage() {
               <BookOpen className="w-5 h-5" />
             }
           />
-
           <StatCard
             title="Teachers"
             value={teacherCount}
             icon={<Users className="w-5 h-5" />}
           />
-
           <StatCard
             title="Exams"
             value={exams.length}
@@ -335,7 +310,6 @@ export default function AdminDashboardPage() {
             }
           />
         </div>
-
         <div className="bg-white rounded-xl border shadow-sm">
           <div className="flex border-b">
             <TabButton
@@ -345,7 +319,6 @@ export default function AdminDashboardPage() {
               }
               label="Users"
             />
-
             <TabButton
               active={activeTab === "exams"}
               onClick={() =>
@@ -353,7 +326,6 @@ export default function AdminDashboardPage() {
               }
               label="Exams"
             />
-
             <TabButton
               active={
                 activeTab === "materials"
@@ -364,7 +336,6 @@ export default function AdminDashboardPage() {
               label="Materials"
             />
           </div>
-
           <div className="p-6">
             {activeTab === "users" && (
               <div className="space-y-3">
@@ -383,13 +354,19 @@ export default function AdminDashboardPage() {
                       <p className="capitalize text-sm">
                         {user.role}
                       </p>
+
+                      <p className="text-xs text-gray-500 mt-1">
+                        Joined:{" "}
+                        {new Date(
+                          user.createdAt
+                        ).toLocaleDateString()}
+                      </p>
                     </div>
 
                     <button
                       onClick={() =>
                         deleteUser(
-                          user.id,
-                          user.role
+                          user.id
                         )
                       }
                     >
@@ -399,54 +376,66 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
             )}
-
             {activeTab === "exams" && (
-              <div className="space-y-3">
-                {exams.map((exam) => (
-                  <div
-                    key={exam.id}
-                    className="border rounded-lg p-4 flex justify-between"
-                  >
-                    <div>
-                      <h4 className="font-medium">
-                        {exam.title}
-                      </h4>
+  <>
+    <div className="flex justify-between items-center mb-4">
+      <h3 className="font-semibold text-lg">
+        Manage Exams
+      </h3>
 
-                      <p>
-                        {exam.creatorName} •{" "}
-                        {
-                          exam.questionCount
-                        }{" "}
-                        questions
-                      </p>
+      <button
+        onClick={() =>
+          router.push("/admin/exam/create")
+        }
+        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+      >
+        <Plus className="w-4 h-4" />
+        Create Exam
+      </button>
+    </div>
 
-                      <p className="text-sm">
-                        Due:{" "}
-                        {new Date(
-                          exam.dueDate
-                        ).toLocaleDateString()}
-                      </p>
-                    </div>
+    <div className="space-y-3">
+      {exams.map((exam) => (
+        <div
+          key={exam.id}
+          className="border rounded-lg p-4 flex justify-between"
+        >
+          <div>
+            <h4 className="font-medium">
+              {exam.title}
+            </h4>
 
-                    <button
-                      onClick={() =>
-                        deleteExam(exam.id)
-                      }
-                    >
-                      <Trash2 className="w-5 h-5 text-red-500" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+            <p>
+              {exam.creatorName} •{" "}
+              {exam.questionCount} questions
+            </p>
 
+            <p className="text-sm">
+              Due:{" "}
+              {new Date(
+                exam.dueDate
+              ).toLocaleDateString()}
+            </p>
+          </div>
+
+          <button
+            onClick={() =>
+              deleteExam(exam.id)
+            }
+          >
+            <Trash2 className="w-5 h-5 text-red-500" />
+          </button>
+        </div>
+      ))}
+    </div>
+  </>
+)}
             {activeTab === "materials" && (
               <>
                 <div className="flex justify-between mb-4">
                   <h3 className="font-semibold">
                     Study Materials
                   </h3>
-
                   <button
                     onClick={() =>
                       setShowAddMaterial(
@@ -477,7 +466,6 @@ export default function AdminDashboardPage() {
                           })
                         }
                       />
-
                       <input
                         className="border rounded-lg p-2"
                         placeholder="Subject"
@@ -492,7 +480,6 @@ export default function AdminDashboardPage() {
                           })
                         }
                       />
-
                       <select
                         className="border rounded-lg p-2"
                         value={
@@ -511,7 +498,6 @@ export default function AdminDashboardPage() {
                         <option>Document</option>
                         <option>Link</option>
                       </select>
-
                       <input
                         className="border rounded-lg p-2"
                         placeholder="File URL"
@@ -527,7 +513,6 @@ export default function AdminDashboardPage() {
                         }
                       />
                     </div>
-
                     <div className="flex gap-2 mt-3">
                       <button
                         onClick={
@@ -537,7 +522,6 @@ export default function AdminDashboardPage() {
                       >
                         Save
                       </button>
-
                       <button
                         onClick={() =>
                           setShowAddMaterial(
@@ -551,7 +535,6 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                 )}
-
                 <div className="space-y-3">
                   {materials.map(
                     (material) => (
@@ -563,22 +546,20 @@ export default function AdminDashboardPage() {
                       >
                         <div>
                           <h4 className="font-medium">
-                            {
-                              material.title
-                            }
+                            {material.title}
                           </h4>
 
                           <p>
-                            {
-                              material.subject
-                            }{" "}
-                            •{" "}
-                            {
-                              material.type
-                            }
+                            {material.subject} • {material.type}
+                          </p>
+
+                          <p className="text-xs text-gray-500 mt-1">
+                            Uploaded:{" "}
+                            {new Date(
+                              material.createdAt
+                            ).toLocaleDateString()}
                           </p>
                         </div>
-
                         <button
                           onClick={() =>
                             deleteMaterial(
@@ -600,7 +581,6 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
 function StatCard({
   title,
   value,
@@ -623,7 +603,6 @@ function StatCard({
     </div>
   );
 }
-
 function TabButton({
   active,
   onClick,

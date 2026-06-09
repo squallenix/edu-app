@@ -1,0 +1,6 @@
+{
+  "email": "abc@gmail.com",
+  "fullName": "System Administrator",
+  "password": "12345678",
+  "role": "admin"
+}http://localhost:3000/api/auth/signup

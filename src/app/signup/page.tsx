@@ -212,6 +212,14 @@ export default function SignupPage() {
               <p className="text-center text-sm text-gray-600">{message}</p>
             )}
           </form>
+
+          <button
+            type="button"
+            onClick={() => router.push("/login")}
+            className="mt-4 w-full border border-border py-3 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            Already have an account? Login
+          </button>
         </div>
       </div>
     </div>

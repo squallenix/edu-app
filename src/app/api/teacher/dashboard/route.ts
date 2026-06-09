@@ -61,16 +61,16 @@ export async function GET() {
               .toISOString()
               .split("T")[0]
           : null,
-        status:
-          exam.enrollments.length > 0
-            ? "Published"
-            : "Draft",
+        availableAt: exam.dueDate
+          ? exam.dueDate.toISOString()
+          : null,
+        status: exam.status,
       })
     );
 
     const activeExams = exams.filter(
       (exam) =>
-        exam.status === "Published"
+        exam.status === "PUBLISHED"
     ).length;
 
     const totalStudents = exams.reduce(

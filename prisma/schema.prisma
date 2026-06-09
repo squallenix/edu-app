@@ -14,7 +14,11 @@ datasource db {
 
 // The legacy `User` model has been removed. Role-specific models
 // (`Student`, `Teacher`, `Admin`) are used instead.
-
+enum ExamStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
 model Exam {
   id          String    @id @default(cuid())
   title       String
@@ -24,7 +28,7 @@ model Exam {
   duration    Int?      // Duration in minutes
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  
+  status    ExamStatus @default(DRAFT)
   // Creator (Teacher)
   createdById String
   createdBy   Teacher   @relation(fields: [createdById], references: [id], onDelete: Cascade)
@@ -156,12 +160,12 @@ model Admin {
 
   @@index([email])
 }
-model StudyMaterial {
-  id          String   @id @default(cuid())
-  title       String
-  subject     String
-  type        String
-  fileUrl     String?
-  createdAt   DateTime @default(now())
+  model StudyMaterial {
+    id          String   @id @default(cuid())
+    title       String
+    subject     String
+    type        String
+    fileUrl     String?
+    createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

@@ -2,7 +2,16 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
+import { ExamStatus } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
+
+function formatTimeForInput(date: Date | null) {
+  if (!date) {
+    return null;
+  }
+
+  return date.toISOString().slice(11, 19);
+}
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -38,11 +47,19 @@ export async function GET() {
 
   return NextResponse.json({
     upcomingExams: enrollments
-      .filter((e) => e.status === "pending")
+      .filter(
+        (e) =>
+          e.status === "approved" &&
+          e.exam.status === ExamStatus.PUBLISHED &&
+          e.score === null
+      )
       .map((e) => ({
         id: e.exam.id,
         title: e.exam.title,
-        date: e.exam.dueDate,
+        dueDate: e.exam.dueDate.toISOString(),
+        time: formatTimeForInput(e.exam.time),
+        duration: e.exam.duration,
+        canTake: e.exam.dueDate.getTime() <= Date.now(),
       })),
 
     recentResults: enrollments
@@ -51,7 +68,9 @@ export async function GET() {
         id: e.exam.id,
         title: e.exam.title,
         score: e.score,
-        date: e.completedAt,
+        completedAt: e.completedAt
+          ? e.completedAt.toISOString()
+          : null,
       })),
   });
 }

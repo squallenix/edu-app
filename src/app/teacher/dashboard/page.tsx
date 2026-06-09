@@ -8,10 +8,12 @@ import {
   Users,
   Trophy,
   Calendar,
+  Clock,
   PlusCircle,
   LogOut,
+  UserCheck,
 } from "lucide-react";
-import router from "next/router";
+import { useRouter } from "next/navigation";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -28,7 +30,8 @@ type TeacherExam = {
   title: string;
   students: number;
   date: string | null;
-  status: string;
+  availableAt: string | null;
+  status: "DRAFT" | "PUBLISHED" | "CLOSED";
 };
 
 type DashboardResponse = {
@@ -43,9 +46,33 @@ type DashboardResponse = {
 
   exams: TeacherExam[];
 };
+const getStatusBadge = (
+  status: TeacherExam["status"]
+) => {
+  switch (status) {
+    case "PUBLISHED":
+      return "bg-green-100 text-green-700";
 
+    case "DRAFT":
+      return "bg-amber-100 text-amber-700";
+
+    case "CLOSED":
+      return "bg-gray-100 text-gray-700";
+
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
+};
+const formatStatus = (
+  status: TeacherExam["status"]
+) => {
+  return status === "PUBLISHED"
+    ? "Active"
+    : "Inactive";
+};
 export default function TeacherDashboard() {
-  const { data, isLoading, error } =
+  const router = useRouter();
+  const { data, isLoading, error, mutate } =
     useSWR<DashboardResponse>(
       "/api/teacher/dashboard",
       fetcher
@@ -55,6 +82,21 @@ export default function TeacherDashboard() {
     await signOut({
       callbackUrl: "/login",
     });
+  }
+
+  async function handleToggleExamStatus(examId: string) {
+    const response = await fetch(
+      `/api/teacher/exam/${examId}/status`,
+      {
+        method: "PATCH",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to update exam status");
+    }
+
+    mutate();
   }
 
   if (isLoading) {
@@ -106,6 +148,17 @@ export default function TeacherDashboard() {
               </div>
             </div>
 
+            <div className="flex items-center gap-2">
+            <button
+              
+              className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() =>
+              router.push("/teacher/exam/access")}
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>Manage Students</span>
+            </button>
+
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -113,6 +166,8 @@ export default function TeacherDashboard() {
               <LogOut className="w-4 h-4" />
               <span>Logout</span>
             </button>
+          </div>
+
           </div>
         </div>
       </header>
@@ -199,7 +254,7 @@ export default function TeacherDashboard() {
 
               <button  className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition-opacity"
               onClick={() =>
-              router.push("/teacher/exams/create")
+              router.push("/teacher/exam/create")
                 }>
                 <PlusCircle className="w-4 h-4" />
                 <span>Create Exam</span>
@@ -215,7 +270,13 @@ export default function TeacherDashboard() {
                 {exams.map((exam) => (
                   <div
                     key={exam.id}
+                    onClick={() => {
+                      handleToggleExamStatus(
+                        exam.id
+                      ).catch(console.error);
+                    }}
                     className="p-4 rounded-lg border hover:border-primary/50 transition-colors cursor-pointer"
+                    title="Click to toggle active/inactive"
                   >
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="font-medium">
@@ -223,15 +284,12 @@ export default function TeacherDashboard() {
                       </h4>
 
                       <span
-                        className={`text-xs px-2 py-1 rounded ${
-                          exam.status ===
-                          "Published"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-amber-100 text-amber-700"
-                        }`}
-                      >
-                        {exam.status}
-                      </span>
+                      className={`text-xs px-2 py-1 rounded ${getStatusBadge(
+                        exam.status
+                      )}`}
+                    >
+                      {formatStatus(exam.status)}
+                    </span>
                     </div>
 
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -242,11 +300,31 @@ export default function TeacherDashboard() {
                         </span>
                       </div>
 
-                      {exam.date && (
+                      {exam.availableAt && (
                         <div className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
                           <span>
-                            {exam.date}
+                            {new Date(
+                              exam.availableAt
+                            ).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </span>
+                        </div>
+                      )}
+
+                      {exam.availableAt && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          <span>
+                            {new Date(
+                              exam.availableAt
+                            ).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </span>
                         </div>
                       )}

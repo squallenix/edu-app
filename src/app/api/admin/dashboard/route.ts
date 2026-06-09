@@ -91,15 +91,15 @@ export async function GET() {
         new Date(a.joinDate).getTime()
     );
 
-    const examList = recentExams.map(
-      (exam) => ({
-        id: exam.id,
-        title: exam.title,
-        creator: exam.createdBy.name,
-        questions: exam.questions.length,
-        date: exam.dueDate,
-      })
-    );
+    const examList = recentExams.map((exam) => ({
+      id: exam.id,
+      title: exam.title,
+      description: exam.description,
+      dueDate: exam.dueDate,
+      createdAt: exam.createdAt,
+      questionCount: exam.questions.length,
+      creatorName: exam.createdBy.name,
+    }));
 
     return NextResponse.json({
       stats: {
